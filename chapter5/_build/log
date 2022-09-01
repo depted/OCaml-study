@@ -1,0 +1,5 @@
+# dune init project mystack
+# OCAMLPARAM: unset
+# Shared cache: disabled
+# Workspace root: /home/opam/ocaml/chapter5
+# Auto-detected concurrency: 4
