@@ -172,3 +172,40 @@ module BatchedQueue : Queue = struct
   let to_list {o; i} = o @ List.rev i 
 end 
 
+(* map(aka dictionary) binds keys to value *)
+module type Map = sig
+  type ('k, 'v) t
+
+  val empty : ('k, 'v) t
+
+  val insert : 'k -> 'v -> ('k, 'v) t -> ('k, 'v) t
+
+  val lookup : 'k -> ('k, 'v) t -> 'v 
+
+  val bindings : ('k, 'v) t -> ('k * 'v) list 
+end
+
+module AssocListMap : Map = struct 
+  type ('k, 'v) = ('k * 'v) list 
+  let empty = []
+  let insert k v m = (k, v) :: m 
+  let lookup k m = List.assoc k m 
+  let keys m = List.(m |> map fst |> sort_uniq Stdlib.compare)
+  let bindings m = m |> keys |> List.map (fun k -> (k, lookup k m))
+end 
+
+module type Set = sig 
+  type 'a t 
+  val empty : 'a t 
+  val mem : 'a -> 'a t -> bool 
+  val add : 'a -> 'a t -> 'a t 
+  val elements : 'a t -> 'a list 
+end 
+
+module UniqListSet : Set = struct 
+  type 'a t = 'a list 
+  let empty = []
+  let mem = List.mem
+  let add x s = if mem x s then s else x :: s 
+  let elements = Fun.id 
+end 
