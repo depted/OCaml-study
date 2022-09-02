@@ -30,6 +30,12 @@ parameterized structure
 *)
 
 (*
-Functor types are an example of an advanced programming language feature called dependent types, 
-with which the type of an output is determined by the value of an input. 
+  Functor types are an example of an advanced programming language feature called dependent types, 
+  with which the type of an output is determined by the value of an input. 
 *)
+
+module type OrderedType = sig 
+  type t 
+  val compare : t -> t -> int 
+end
+
