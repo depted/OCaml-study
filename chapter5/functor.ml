@@ -39,3 +39,18 @@ module type OrderedType = sig
   val compare : t -> t -> int 
 end
 
+type name = {first : string; last : string }
+
+module Name = struct 
+  type t = name 
+  let compare {first = first1; last = last1 } {first = first2; last = last2} = 
+    match String.compare last last2 with 
+    | 0 -> String.compare first1 first2 
+    | c -> c 
+  end 
+
+  (*
+     
+  Need to understand functor more.
+  
+  *)
