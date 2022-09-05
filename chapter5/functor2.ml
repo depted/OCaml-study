@@ -112,4 +112,97 @@ end
 (* In the standard library’s map.mli interface, the specification for Map.Make is: *)
 
 module Make (Ord : OrderedType) : S with type key = Ord.t
-(* done till 5.9.3. we need to start at 5.9.4 next time.*)
+
+(* 5.9.4 Using Functors! *)
+exception Empty
+
+module type Stack = sig 
+  type 'a t 
+  val empty : 'a t 
+  val push : 'a -> 'a t -> 'a t 
+  val peek : 'a t -> 'a 
+  val pop : 'a t -> 'a t
+end
+
+module ListStack = struct
+  type 'a t = 'a list 
+  let empty = []
+  let push = List.cons
+  let peek = function [] -> raise Empty | x::_ -> x 
+  let pop = function [] -> raise Empty | _::s -> s
+
+module VariantStack = struct
+  type 'a t = E | S of 'a * 'a t 
+  let empty = E 
+  let push x s = S (x, s)
+  let peek = function E -> raise Empty | S (x, _) -> x 
+  let pop = function E -> raise Empty | S (_, s) -> s  
+end 
+
+let test = "peek (push x empty) = x" >:: fun _ -> 
+  assert_equal 1 ListStack.(empty |> push 1 |> peek)
+
+let test' = "peek (push x empty) = x" >:: fun _ ->
+  assert_equal 1 VariantStack.(empty |> push 1 |> peek)
+
+module StackTester (S: Stack) = struct 
+  let tests = [
+    "peek (push x empty) = x" >:: fun _ -> 
+      assert_equal 1 S.(empty |> push 1 |> peek)
+  ]
+end
+
+module ListStackTester = StackTester (ListStack)
+module VariantStackTester = StackTester (VariantStack)
+
+let all_tests = List.flatten [
+  ListStackTester.tests;
+  VariantStackTest.tests
+]
+
+let stacks = [ (module ListStack : Stack); (module VariantStack)]
+
+let all_tests = 
+  let tests m = 
+    let module S = (val m : Stack) in 
+    let module T = StackTester (S) in 
+    T.tests
+  in
+  let open List in 
+  stacks |> map tests |> faltten 
+
+module type Set = sig 
+  type 'a t 
+  val empty : 'a t 
+  val mem : 'a -> 'a t -> bool
+  val add : 'a -> 'a t -> 'a t 
+  val elements : 'a t -> 'a list
+end
+
+module SefOfList (S: Set) = struct 
+  let of_list lst = List.fold_right S.add lst S.empty 
+end
+
+module ListSet : Set = struct
+  type 'a t = 'a list 
+  let empty = []
+  let mem = List.mem
+  let add = List.cons 
+  let elements s = List.sort_uniq Stdlib.compare s 
+end
+
+module UniqListSet : Set = struct 
+  type 'a t = 'a list 
+  let empty = []
+  let mem = List.mem 
+  let add x s = if mem x s then s else x :: s 
+  let elements = Fun.id 
+end 
+
+module OfList = SetOfList(ListSet)
+module UniqOfList = SetOfList (UniqListSet)
+
+module SetWithOfList (S : Set) = struct 
+  include S
+  let of_lst lst = List.fold_right S.add lst S.empty 
+end 
